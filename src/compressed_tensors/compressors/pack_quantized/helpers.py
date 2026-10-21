@@ -148,7 +148,9 @@ def unpack_from_int32(
     # words. Big-endian hosts store each word's bytes in reverse order.
     if num_bits == 4:
         nibbles = value.contiguous().view(torch.uint8)
-        if sys.byteorder == "big":
+        # Note: only CPU devices can be big-endian
+        # https://github.com/pytorch/pytorch/blob/orig/release/2.15/torch/_tensor.py#L74
+        if value.device.type == "cpu" and sys.byteorder == "big":
             nibbles = nibbles.view(rows, num_words, 4).flip(-1)
         output = torch.stack((nibbles & 0xF, nibbles >> 4), dim=-1)
         output = output.view(torch.int8).view(rows, -1)[:, :cols] - 8
